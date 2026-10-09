@@ -103,4 +103,4 @@ data.
   TODO: add PR link
 - PR #2 — feat: assignment, workflow, queue, reports and persistence
   (Michael; reviewed and approved by Temple-Daemon)
-  TODO: add PR link
+  TODO: add PR link.
