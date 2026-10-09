@@ -39,7 +39,7 @@ workflow changes.
 
 ## 6. Assignment
 assigned_to starts as None. Assignment requires a valid ticket ID and a
-non-empty staff name.
+non-empty staff name..
 
 ## 7. Work Queue (FINAL — team decision)
 The work queue includes only tickets with status open, sorted by priority

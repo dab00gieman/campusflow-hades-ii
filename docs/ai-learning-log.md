@@ -15,4 +15,4 @@ corrected, improved or rejected an AI suggestion.
 - The experiment I ran (the exact small snippet, not project code):
 - What actually happened vs my prediction:
 - How I verified it independently (official docs / test output):
-- What I now understand in one or two sentences:
+- What I now understand in one or two sentences.
