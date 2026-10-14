@@ -13,6 +13,69 @@ from campusflow.storage import load_tickets, save_tickets
 
 DATA_PATH = "data/tickets.json"
 
+CATEGORIES = ["Network", "Hardware", "Software", "Other"]
+URGENCIES = ["low", "medium", "high"]
+CANCEL_WORD = "back"
+
+
+class CancelledInput(Exception):
+    """Raised when the user types the cancel word at a prompt."""
+
+
+def ask(prompt, parse):
+    """Re-ask the same question until parse() accepts the answer.
+
+    parse receives the raw text and returns the cleaned value, or raises
+    ValueError with a message. Typing 'back' abandons the current action
+    and returns to the main menu.
+    """
+    while True:
+        raw = input(f"{prompt} (or '{CANCEL_WORD}' to cancel): ")
+        if raw.strip().lower() == CANCEL_WORD:
+            raise CancelledInput()
+        try:
+            return parse(raw)
+        except ValueError as error:
+            print(f"  Invalid input: {error}. Please try again.")
+
+
+def parse_title(raw):
+    if not raw.strip():
+        raise ValueError("Title cannot be empty")
+    return raw.strip()
+
+
+def parse_choice(options, label, transform):
+    def parse(raw):
+        value = transform(raw.strip())
+        if value not in options:
+            raise ValueError(f"{label} must be one of: {', '.join(options)}")
+        return value
+    return parse
+
+
+def parse_affected_users(raw):
+    try:
+        number = int(raw.strip())
+    except ValueError:
+        raise ValueError("Affected users must be a whole number")
+    if number < 1:
+        raise ValueError("Affected users must be at least 1")
+    return number
+
+
+def parse_staff(raw):
+    if not raw.strip():
+        raise ValueError("Staff name cannot be empty")
+    return raw.strip()
+
+
+def ask_ticket(tickets):
+    """Ask for a ticket ID until it matches an existing ticket."""
+    def parse(raw):
+        return get_ticket(tickets, raw.strip().upper())
+    return ask("Ticket ID", parse)
+
 
 def display_ticket(ticket):
     print("\n--- Ticket Details ---")
@@ -36,12 +99,16 @@ def list_tickets(tickets):
 
 
 def create_new_ticket(tickets):
-    title = input("Ticket title: ").strip()
-    category = input(
-        "Category (Network/Hardware/Software/Other): "
-    ).strip().title()
-    urgency = input("Urgency (low/medium/high): ").strip().lower()
-    affected_users = int(input("Number of affected users: "))
+    title = ask("Ticket title", parse_title)
+    category = ask(
+        "Category (Network/Hardware/Software/Other)",
+        parse_choice(CATEGORIES, "Category", str.title),
+    )
+    urgency = ask(
+        "Urgency (low/medium/high)",
+        parse_choice(URGENCIES, "Urgency", str.lower),
+    )
+    affected_users = ask("Number of affected users", parse_affected_users)
 
     ticket = create_ticket(
         title,
@@ -57,10 +124,10 @@ def create_new_ticket(tickets):
 
 
 def assign_existing_ticket(tickets):
-    ticket_id = input("Ticket ID: ").strip().upper()
-    ticket = get_ticket(tickets, ticket_id)
+    ticket = ask_ticket(tickets)
+    ticket_id = ticket["id"]
 
-    staff = input("Staff member's name: ")
+    staff = ask("Staff member's name", parse_staff)
     assign_ticket(ticket, staff)
 
     save_tickets(tickets, DATA_PATH)
@@ -68,8 +135,8 @@ def assign_existing_ticket(tickets):
 
 
 def start_existing_ticket(tickets):
-    ticket_id = input("Ticket ID: ").strip().upper()
-    ticket = get_ticket(tickets, ticket_id)
+    ticket = ask_ticket(tickets)
+    ticket_id = ticket["id"]
 
     start_ticket(ticket)
 
@@ -78,8 +145,8 @@ def start_existing_ticket(tickets):
 
 
 def resolve_existing_ticket(tickets):
-    ticket_id = input("Ticket ID: ").strip().upper()
-    ticket = get_ticket(tickets, ticket_id)
+    ticket = ask_ticket(tickets)
+    ticket_id = ticket["id"]
 
     resolve_ticket(ticket)
 
@@ -88,8 +155,8 @@ def resolve_existing_ticket(tickets):
 
 
 def reopen_existing_ticket(tickets):
-    ticket_id = input("Ticket ID: ").strip().upper()
-    ticket = get_ticket(tickets, ticket_id)
+    ticket = ask_ticket(tickets)
+    ticket_id = ticket["id"]
 
     reopen_ticket(ticket)
 
@@ -189,10 +256,11 @@ def main():
             else:
                 print("Invalid option. Choose a number from 1 to 9.")
 
+        except CancelledInput:
+            print("Cancelled. Returning to the main menu.")
         except (ValueError, OSError) as error:
             print(f"Error: {error}")
 
 
 if __name__ == "__main__":
     main()
-
