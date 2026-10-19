@@ -4,7 +4,7 @@ import os
 import unittest
 from pathlib import Path
 
-from campusflow.storage import load_tickets, save_tickets
+from campusflow.storage import export_tickets_csv, load_tickets, save_tickets
 
 
 class TestStorage(unittest.TestCase):
@@ -69,3 +69,31 @@ class TestAtomicSave(unittest.TestCase):
         save_tickets([{"id": "T001", "title": "old", "status": "open"}], self.path)
         save_tickets([], self.path)
         self.assertEqual(load_tickets(self.path), [])
+
+class TestExportCsv(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = os.path.join(self.tmp.name, "tickets.csv")
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_returns_row_count(self):
+        rows = [
+            {"id": "T001", "title": "WiFi, lab 2", "category": "Network"},
+            {"id": "T002", "title": "Broken screen", "category": "Hardware"},
+        ]
+        self.assertEqual(export_tickets_csv(rows, self.path), 2)
+
+    def test_header_and_quoting(self):
+        export_tickets_csv(
+            [{"id": "T001", "title": "WiFi, lab 2", "category": "Network"}],
+            self.path,
+        )
+        lines = open(self.path, encoding="utf-8").read().splitlines()
+        self.assertEqual(lines[0].split(",")[:3], ["id", "title", "category"])
+        self.assertIn('"WiFi, lab 2"', lines[1])
+
+    def test_empty_export_writes_only_header(self):
+        self.assertEqual(export_tickets_csv([], self.path), 0)
+        lines = open(self.path, encoding="utf-8").read().splitlines()
+        self.assertEqual(len(lines), 1)
+        self.assertTrue(lines[0].startswith("id"))
