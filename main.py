@@ -7,7 +7,7 @@ from campusflow.workflow import (
     reopen_ticket,
     work_queue,
 )
-from campusflow.reports import report_summary
+from campusflow.reports import report_summary, report_by_assignee
 from campusflow.storage import load_tickets, save_tickets, export_tickets_csv
 
 
@@ -220,6 +220,20 @@ def display_reports(tickets):
         print(f"  {priority}: {count}")
 
 
+def display_staff_workload(tickets):
+    rows = report_by_assignee(tickets)
+
+    if not rows:
+        print("\nNo assigned tickets — nothing to report.")
+        return
+
+    print("\n--- Staff Workload ---")
+    for row in rows:
+        print(f"  {row['staff']}: {row['active']} active "
+              f"({row['open']} open, {row['in_progress']} in progress), "
+              f"{row['resolved']} resolved")
+
+
 def display_menu():
     print("\n========== CAMPUSFLOW ==========")
     print("1. Create ticket")
@@ -231,8 +245,9 @@ def display_menu():
     print("7. Resolve ticket")
     print("8. Reopen ticket")
     print("9. View reports")
-    print("10. Export tickets to CSV")
-    print("11. Exit")
+    print("10. View staff workload")
+    print("11. Export tickets to CSV")
+    print("12. Exit")
     print("================================")
 
 
@@ -278,14 +293,17 @@ def main():
                 display_reports(tickets)
 
             elif choice == "10":
-                export_tickets_to_csv(tickets)
+                display_staff_workload(tickets)
 
             elif choice == "11":
+                export_tickets_to_csv(tickets)
+
+            elif choice == "12":
                 print("Thanks for using CampusFlow. Goodbye!")
                 break
 
             else:
-                print("Invalid option. Choose a number from 1 to 11.")
+                print("Invalid option. Choose a number from 1 to 12.")
 
         except CancelledInput:
             print("Cancelled. Returning to the main menu.")
