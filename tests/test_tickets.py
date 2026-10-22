@@ -1,8 +1,10 @@
 import unittest
 from campusflow.tickets import (
     calculate_priority,
-    next_id,
     create_ticket,
+    days_until_due,
+    next_id,
+    parse_due_date,
     search_tickets,
 )
 
@@ -69,3 +71,31 @@ class TestSearchTickets(unittest.TestCase):
 
     def test_no_match_returns_empty(self):
         self.assertEqual(search_tickets(self._sample(), "zebra"), [])
+
+
+class DueDateTest(unittest.TestCase):
+    def test_create_with_valid_due_date(self):
+        tickets = []
+        t = create_ticket("Email down", "Network", "high", 30, tickets,
+                          due_date="2026-12-25")
+        self.assertEqual(t["due_date"], "2026-12-25")
+
+    def test_create_without_due_date(self):
+        tickets = []
+        t = create_ticket("Email down", "Network", "high", 30, tickets)
+        self.assertIsNone(t["due_date"])
+
+    def test_rejects_past_date(self):
+        with self.assertRaises(ValueError):
+            create_ticket("x", "Other", "low", 1, [], due_date="2020-01-01")
+
+    def test_rejects_bad_format(self):
+        with self.assertRaises(ValueError):
+            create_ticket("x", "Other", "low", 1, [], due_date="25/12/2026")
+
+    def test_days_until_due_math(self):
+        from datetime import date
+        t = {"due_date": "2026-11-01"}
+        self.assertEqual(days_until_due(t, today=date(2026, 10, 31)), 1)
+        self.assertEqual(days_until_due(t, today=date(2026, 11, 2)), -1)
+        self.assertIsNone(days_until_due({}))

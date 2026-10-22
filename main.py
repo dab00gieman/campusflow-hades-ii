@@ -1,4 +1,4 @@
-from campusflow.tickets import create_ticket, search_tickets
+from campusflow.tickets import create_ticket, days_until_due, parse_due_date, search_tickets
 from campusflow.workflow import (
     get_ticket,
     assign_ticket,
@@ -77,6 +77,13 @@ def ask_ticket(tickets):
     return ask("Ticket ID", parse)
 
 
+def parse_optional_due_date(raw):
+    """Accept a blank due date (None) or a valid YYYY-MM-DD future date."""
+    if not raw.strip():
+        return None
+    return parse_due_date(raw)
+
+
 def display_ticket(ticket):
     print("\n--- Ticket Details ---")
     print(f"ID: {ticket['id']}")
@@ -87,6 +94,16 @@ def display_ticket(ticket):
     print(f"Priority: {ticket['priority']}")
     print(f"Status: {ticket['status']}")
     print(f"Assigned to: {ticket['assigned_to'] or 'Unassigned'}")
+    if ticket.get("due_date"):
+        days = days_until_due(ticket)
+        if days is None:
+            pass
+        elif days < 0:
+            print(f"Due: {ticket['due_date']} — OVERDUE by {-days} day(s)")
+        elif days == 0:
+            print(f"Due: {ticket['due_date']} — due TODAY")
+        else:
+            print(f"Due: {ticket['due_date']} — in {days} day(s)")
 
 
 def list_tickets(tickets):
@@ -109,6 +126,7 @@ def create_new_ticket(tickets):
         parse_choice(URGENCIES, "Urgency", str.lower),
     )
     affected_users = ask("Number of affected users", parse_affected_users)
+    due_date = ask("Due date, YYYY-MM-DD (blank for none)", parse_optional_due_date)
 
     ticket = create_ticket(
         title,
@@ -116,6 +134,7 @@ def create_new_ticket(tickets):
         urgency,
         affected_users,
         tickets,
+        due_date=due_date,
     )
 
     save_tickets(tickets, DATA_PATH)

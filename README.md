@@ -94,7 +94,7 @@ data.
 - Tickets cannot be edited or deleted after creation (only status changes).
 - A corrupted tickets.json is reported but not backed up or repaired.
 - Single-user CLI with no authentication or concurrency handling.
-- Future: due dates, GUI. Landed: CSV export (menu option 11), staff workload view (menu option 10).
+- Future: GUI. Landed: due dates (optional, validated; overdue shown in ticket details), CSV export (menu option 11), staff workload view (menu option 10).
 
 ## Pull Requests
 
