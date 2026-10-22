@@ -191,7 +191,10 @@ def search_for_tickets(tickets):
         .lower()
         or None
     )
-    results = search_tickets(tickets, query, status)
+    assignee = input(
+        "Assignee filter (name, 'unassigned', blank for all): "
+    ).strip() or None
+    results = search_tickets(tickets, query, status, assignee)
     if not results:
         print("\nNo tickets matched your search.")
         return

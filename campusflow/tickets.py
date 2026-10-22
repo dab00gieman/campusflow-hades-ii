@@ -86,11 +86,13 @@ def create_ticket(title, category, urgency, affected_users, tickets, due_date=No
     return ticket
 
 
-def search_tickets(tickets, query, status=None):
+def search_tickets(tickets, query, status=None, assignee=None):
     """Return tickets whose title or category contains the query.
 
     Matching is case-insensitive. An optional status
-    ("open", "in_progress", "resolved") filters the results.
+    ("open", "in_progress", "resolved") and an optional assignee
+    (staff name, case-insensitive, or "unassigned" for tickets with
+    no assignee) filter the results.
     """
     if not isinstance(query, str) or not query.strip():
         raise ValueError("Search query cannot be empty")
@@ -109,5 +111,15 @@ def search_tickets(tickets, query, status=None):
         results = [
             ticket for ticket in results if ticket["status"] == status
         ]
+
+    if assignee is not None and assignee.strip():
+        wanted = assignee.strip().lower()
+        if wanted == "unassigned":
+            results = [t for t in results if not t.get("assigned_to")]
+        else:
+            results = [
+                t for t in results
+                if t.get("assigned_to") and wanted in t["assigned_to"].lower()
+            ]
 
     return results

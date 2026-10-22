@@ -99,3 +99,29 @@ class DueDateTest(unittest.TestCase):
         self.assertEqual(days_until_due(t, today=date(2026, 10, 31)), 1)
         self.assertEqual(days_until_due(t, today=date(2026, 11, 2)), -1)
         self.assertIsNone(days_until_due({}))
+
+
+class SearchAssigneeFilterTest(unittest.TestCase):
+    def _mk(self, title, assigned):
+        return {"id": title, "title": title, "category": "Other",
+                "urgency": "low", "affected_users": 1, "priority": "low",
+                "status": "open", "assigned_to": assigned, "due_date": None}
+
+    def setUp(self):
+        self.tickets = [
+            self._mk("Email down", "Ada Oogwu"),
+            self._mk("Wifi drop", None),
+            self._mk("Email slow", "Bo Fred"),
+        ]
+
+    def test_filter_by_assignee_case_insensitive(self):
+        r = search_tickets(self.tickets, "email", assignee="ada")
+        self.assertEqual([t["title"] for t in r], ["Email down"])
+
+    def test_unassigned_keyword(self):
+        r = search_tickets(self.tickets, "wifi", assignee="unassigned")
+        self.assertEqual([t["title"] for t in r], ["Wifi drop"])
+
+    def test_blank_assignee_means_no_filter(self):
+        r = search_tickets(self.tickets, "email", assignee="  ")
+        self.assertEqual(len(r), 2)
