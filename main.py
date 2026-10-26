@@ -7,7 +7,7 @@ from campusflow.workflow import (
     reopen_ticket,
     work_queue,
 )
-from campusflow.reports import report_summary, report_by_assignee
+from campusflow.reports import report_due, report_summary, report_by_assignee
 from campusflow.storage import load_tickets, save_tickets, export_tickets_csv
 
 
@@ -269,8 +269,37 @@ def display_menu():
     print("9. View reports")
     print("10. View staff workload")
     print("11. Export tickets to CSV")
-    print("12. Exit")
+    print("12. View due report (overdue + due soon)")
+    print("13. Exit")
     print("================================")
+
+
+def display_due_report(tickets):
+    report = report_due(tickets)
+
+    if report["overdue_count"] == 0 and report["due_soon_count"] == 0:
+        print("\nNo overdue or due-soon tickets — nothing urgent.")
+        return
+
+    if report["overdue"]:
+        print(f"\n--- Overdue ({report['overdue_count']}) ---")
+        for row in report["overdue"]:
+            n = -row["days"]
+            when = "1 day" if n == 1 else f"{n} days"
+            print(f"  {row['id']} [{row['priority']}] {row['title']} "
+                  f"— due {row['due_date']} ({when} overdue)")
+
+    if report["due_soon"]:
+        print(f"\n--- Due soon, within 3 days ({report['due_soon_count']}) ---")
+        for row in report["due_soon"]:
+            if row["days"] == 0:
+                when = "due today"
+            elif row["days"] == 1:
+                when = "due in 1 day"
+            else:
+                when = f"due in {row['days']} days"
+            print(f"  {row['id']} [{row['priority']}] {row['title']} "
+                  f"— due {row['due_date']} ({when})")
 
 
 def main():
@@ -284,7 +313,7 @@ def main():
 
     while True:
         display_menu()
-        choice = input("Choose an option (1-10): ").strip()
+        choice = input("Choose an option (1-13): ").strip()
 
         try:
             if choice == "1":
@@ -321,11 +350,14 @@ def main():
                 export_tickets_to_csv(tickets)
 
             elif choice == "12":
+                display_due_report(tickets)
+
+            elif choice == "13":
                 print("Thanks for using CampusFlow. Goodbye!")
                 break
 
             else:
-                print("Invalid option. Choose a number from 1 to 12.")
+                print("Invalid option. Choose a number from 1 to 13.")
 
         except CancelledInput:
             print("Cancelled. Returning to the main menu.")
