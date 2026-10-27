@@ -1,3 +1,31 @@
+from datetime import date
+
+def stale_tickets(tickets, days=7, today=None):
+    """Open/in-progress tickets older than `days`, most stale first.
+
+    WHY tickets without created_at are skipped: aging stamps land on
+    newly created tickets (parity with zeus-ii #14); records saved
+    before stamping have no baseline date, so aging them would be a
+    guess, not a fact.
+    """
+    today = today or date.today()
+    rows = []
+    for ticket in tickets:
+        created = ticket.get("created_at")
+        if not created or ticket["status"] == "resolved":
+            continue
+        age = (today - date.fromisoformat(created)).days
+        if age > days:
+            rows.append({
+                "id": ticket["id"],
+                "title": ticket["title"],
+                "status": ticket["status"],
+                "created_at": created,
+                "age": age,
+            })
+    return sorted(rows, key=lambda row: row["age"], reverse=True)
+
+
 def get_ticket(tickets, ticket_id):
     for ticket in tickets:
         if ticket["id"] == ticket_id:
