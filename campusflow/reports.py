@@ -84,3 +84,27 @@ def report_due(tickets, within_days=3, today=None):
         "overdue_count": len(overdue),
         "due_soon_count": len(due_soon),
     }
+
+def report_by_category(tickets):
+    """Count tickets per category, highest first, with share of total.
+
+    Parity with campusflow-zeus-ii: same row shape and sort order so
+    reports read identically across the two deployments.
+    """
+    counts = {}
+    for ticket in tickets:
+        category = ticket["category"]
+        counts[category] = counts.get(category, 0) + 1
+
+    total = len(tickets)
+    rows = [
+        {
+            "category": category,
+            "count": count,
+            "share": round(count / total * 100, 1) if total else 0.0,
+        }
+        for category, count in counts.items()
+    ]
+    rows.sort(key=lambda row: (-row["count"], row["category"]))
+    return rows
+
