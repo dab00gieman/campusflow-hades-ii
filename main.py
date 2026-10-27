@@ -114,13 +114,28 @@ def display_ticket(ticket):
             print(f"  - [{note['created_at']}] {note['text']}")
 
 
-def list_tickets(tickets):
+def list_tickets(tickets, page=1, per_page=10):
+    """Print tickets one page at a time.
+
+    Parity with zeus-ii: pages are 1-indexed, out-of-range pages clamp
+    to the last page, and the footer shows position. Stops the terminal
+    scrolling past the useful part on real ticket volumes.
+    """
     if not tickets:
         print("\nNo tickets found.")
         return
 
-    for ticket in tickets:
+    total_pages = -(-len(tickets) // per_page)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * per_page
+    for ticket in tickets[start:start + per_page]:
         display_ticket(ticket)
+
+    print(f"\n[Page {page} of {total_pages}]")
+    if page < total_pages:
+        answer = input("Show next page? (y/N): ").strip().lower()
+        if answer == "y":
+            list_tickets(tickets, page + 1, per_page)
 
 
 def create_new_ticket(tickets):
