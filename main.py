@@ -242,6 +242,10 @@ def display_reports(tickets):
     for priority, count in report["by_priority"].items():
         print(f"  {priority}: {count}")
 
+    print("\nTickets by category:")
+    for row in report_by_category(tickets):
+        print(f"  {row['category']}: {row['count']} ({row['share']}%)")
+
 
 def display_staff_workload(tickets):
     rows = report_by_assignee(tickets)
