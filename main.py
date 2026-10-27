@@ -1,5 +1,6 @@
 from campusflow.tickets import create_ticket, days_until_due, parse_due_date, search_tickets
 from campusflow.workflow import (
+    stale_tickets,
     get_ticket,
     assign_ticket,
     start_ticket,
@@ -256,6 +257,17 @@ def display_staff_workload(tickets):
               f"{row['resolved']} resolved")
 
 
+def display_stale_tickets(tickets):
+    rows = stale_tickets(tickets)
+    if not rows:
+        print("\nNo stale tickets (nothing open past 7 days).")
+        return
+    print("\n--- Stale tickets (open 7+ days) ---")
+    for row in rows:
+        print(f"  {row['id']} [{row['status']}] {row['title']} - "
+              f"open {row['age']} day(s)")
+
+
 def display_menu():
     print("\n========== CAMPUSFLOW ==========")
     print("1. Create ticket")
@@ -270,7 +282,8 @@ def display_menu():
     print("10. View staff workload")
     print("11. Export tickets to CSV")
     print("12. View due report (overdue + due soon)")
-    print("13. Exit")
+    print("13. View stale tickets")
+    print("14. Exit")
     print("================================")
 
 
@@ -313,7 +326,7 @@ def main():
 
     while True:
         display_menu()
-        choice = input("Choose an option (1-13): ").strip()
+        choice = input("Choose an option (1-14): ").strip()
 
         try:
             if choice == "1":
@@ -353,11 +366,14 @@ def main():
                 display_due_report(tickets)
 
             elif choice == "13":
+                display_stale_tickets(tickets)
+
+            elif choice == "14":
                 print("Thanks for using CampusFlow. Goodbye!")
                 break
 
             else:
-                print("Invalid option. Choose a number from 1 to 13.")
+                print("Invalid option. Choose a number from 1 to 14.")
 
         except CancelledInput:
             print("Cancelled. Returning to the main menu.")

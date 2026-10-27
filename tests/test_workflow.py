@@ -1,12 +1,6 @@
 import unittest
-from campusflow.workflow import (
-    get_ticket,
-    assign_ticket,
-    start_ticket,
-    resolve_ticket,
-    reopen_ticket,
-    work_queue
-)
+from datetime import date, timedelta
+from campusflow.workflow import assign_ticket, get_ticket, reopen_ticket, resolve_ticket, stale_tickets, start_ticket, work_queue
 
 class TestWorkflow(unittest.TestCase):
     def setUp(self):
@@ -72,3 +66,55 @@ class TestWorkflow(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestStaleTickets(unittest.TestCase):
+    def make(self, age_days, status="open", stamp=True):
+        ticket = {
+            "id": "T%03d" % age_days,
+            "title": "aged %d" % age_days,
+            "status": status,
+        }
+        if stamp:
+            ticket["created_at"] = (
+                date.today() - timedelta(days=age_days)
+            ).isoformat()
+        return ticket
+
+    def test_stale_only_past_threshold(self):
+        rows = stale_tickets(
+            [self.make(10), self.make(3)], today=date.today()
+        )
+        self.assertEqual([r["id"] for r in rows], ["T010"])
+
+    def test_resolved_never_stale(self):
+        rows = stale_tickets(
+            [self.make(30, status="resolved")], today=date.today()
+        )
+        self.assertEqual(rows, [])
+
+    def test_unstamped_records_skipped(self):
+        rows = stale_tickets([self.make(0, stamp=False)], today=date.today())
+        self.assertEqual(rows, [])
+
+    def test_boundary_age_equals_days_not_stale(self):
+        rows = stale_tickets([self.make(7)], today=date.today())
+        self.assertEqual(rows, [])
+
+    def test_sorted_most_stale_first(self):
+        rows = stale_tickets(
+            [self.make(9), self.make(30), self.make(20)], today=date.today()
+        )
+        self.assertEqual([r["age"] for r in rows], [30, 20, 9])
+
+    def test_row_shape(self):
+        rows = stale_tickets([self.make(12)], today=date.today())
+        self.assertEqual(
+            set(rows[0]),
+            {"id", "title", "status", "created_at", "age"},
+        )
+
+    def test_in_progress_counts_as_stale(self):
+        rows = stale_tickets(
+            [self.make(15, status="in_progress")], today=date.today()
+        )
+        self.assertEqual(len(rows), 1)

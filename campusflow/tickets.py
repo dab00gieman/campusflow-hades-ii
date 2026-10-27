@@ -78,7 +78,8 @@ def create_ticket(title, category, urgency, affected_users, tickets, due_date=No
         "priority": calculate_priority(urgency, affected_users),
         "status": "open",
         "assigned_to": None,
-        "due_date": parse_due_date(due_date)
+        "due_date": parse_due_date(due_date),
+        "created_at": date.today().isoformat()
     }
 
     tickets.append(ticket)
